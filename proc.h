@@ -68,6 +68,14 @@ struct proc {
   char name[16];               // Process name (debugging)
 };
 
+// user view of process
+struct uproc {
+    int parentpid;
+    int procpid;
+    enum procstate state;
+    char name [16];
+};
+
 // Process memory is laid out contiguously, low addresses first:
 //   text
 //   original data and bss

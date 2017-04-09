@@ -419,6 +419,10 @@ kill(int pid)
   return -1;
 }
 
+struct proc* getptable(void) {
+    return ptable.proc;
+}
+
 //PAGEBREAK: 36
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.

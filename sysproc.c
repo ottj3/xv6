@@ -88,3 +88,34 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int sys_getprocs(void) {
+
+    char* copy;
+    if (argptr(0, &copy, sizeof(struct uproc) * NPROC) < 0) return -1;
+
+    int count;
+
+    struct uproc* uprocs = (struct uproc*) copy;
+
+    struct proc* procs = getptable();
+
+    // copy kernel processes into user memory
+    int i;
+    for (i = 0; i < NPROC; i++) {
+        struct proc proc = procs[i];
+        if (proc.state == UNUSED) {
+            continue;
+        }
+
+        memmove(uprocs[count].name, proc.name, 16);
+
+        uprocs[count].parentpid = (proc.parent ? proc.parent->pid : -1);
+        uprocs[count].procpid = proc.pid;
+        uprocs[count].state = proc.state;
+
+        count++;
+    }
+
+    return count;
+}
