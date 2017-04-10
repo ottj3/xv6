@@ -7,6 +7,7 @@ enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 struct uproc {
     int parentpid;
     int procpid;
+    int prio;
     enum procstate state;
     char name [16];
 };
@@ -23,12 +24,12 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    printf(1, "PID\tPPID\tSTATE\t\tNAME\n");
+    printf(1, "PID\tPPID\tPRIO\tSTATE\t\tNAME\n");
 
     int i;
     for (i = 0; i < count; i++) {
         struct uproc up = uprocs[i];
-        printf(1, "%d\t%d\t", up.procpid, up.parentpid);
+        printf(1, "%d\t%d\t%d\t", up.procpid, up.parentpid, up.prio);
         switch (up.state) {
             case UNUSED:
                 printf(1, "%s\t\t", "UNUSED"); // technically shouldn't happen since getprocs filters out these

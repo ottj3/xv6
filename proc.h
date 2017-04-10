@@ -66,12 +66,14 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  int prio;
 };
 
 // user view of process
 struct uproc {
     int parentpid;
     int procpid;
+    int prio;
     enum procstate state;
     char name [16];
 };

@@ -47,6 +47,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->prio = 0;
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -144,6 +145,7 @@ fork(void)
   }
   np->sz = proc->sz;
   np->parent = proc;
+  np->prio = proc->prio;
   *np->tf = *proc->tf;
 
   // Clear %eax so that fork returns 0 in the child.
@@ -230,6 +232,7 @@ wait(void)
         p->parent = 0;
         p->name[0] = 0;
         p->killed = 0;
+        p->prio = 0;
         release(&ptable.lock);
         return pid;
       }
@@ -266,22 +269,28 @@ scheduler(void)
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
 
-    #ifdef FCFS
-    struct proc* lowp = 0;
+    #if defined(FCFS) || defined(PRIO)
+    struct proc* nextp = 0;
     #endif
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
 
     #ifdef FCFS
-      if (!lowp || p->pid < lowp->pid)
-        lowp = p;
+      if (!nextp || p->pid < nextp->pid)
+        nextp = p;
+    #endif
+    #ifdef PRIO
+      if (!nextp || p->prio > nextp->prio)
+        nextp = p;
+    #endif
+    #if defined(FCFS) || defined(PRIO)
     }
-    if (!lowp) {
+    if (!nextp) {
       release(&ptable.lock);
       continue; // no runnable process
     }
-    p = lowp;
+    p = nextp;
     #endif
 
       // Switch to chosen process.  It is the process's job
@@ -296,7 +305,7 @@ scheduler(void)
       // Process is done running for now.
       // It should have changed its p->state before coming back.
       proc = 0;
-    #ifndef FCFS
+    #if !defined(FCFS) && !defined(PRIO)
     }
     #endif
     release(&ptable.lock);

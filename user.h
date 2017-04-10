@@ -23,6 +23,7 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int getprocs(void*);
+int setprio(int);
 
 // ulib.c
 int stat(char*, struct stat*);

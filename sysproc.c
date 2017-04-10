@@ -113,9 +113,20 @@ int sys_getprocs(void) {
         uprocs[count].parentpid = (proc.parent ? proc.parent->pid : -1);
         uprocs[count].procpid = proc.pid;
         uprocs[count].state = proc.state;
+        uprocs[count].prio = proc.prio;
 
         count++;
     }
 
     return count;
+}
+
+int sys_setprio(void) {
+  int n;
+
+  if(argint(0, &n) < 0)
+    return -1;
+
+  proc->prio = n;
+  return n;
 }
