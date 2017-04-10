@@ -117,6 +117,7 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 struct proc*    getptable(void);
+void            procstats(void);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

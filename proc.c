@@ -48,6 +48,9 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   p->prio = 0;
+  p->time_s = 0;
+  p->time_w = 0;
+  p->time_r = 0;
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -233,6 +236,9 @@ wait(void)
         p->name[0] = 0;
         p->killed = 0;
         p->prio = 0;
+        p->time_w = 0;
+        p->time_s = 0;
+        p->time_r = 0;
         release(&ptable.lock);
         return pid;
       }
@@ -277,15 +283,17 @@ scheduler(void)
         continue;
 
     #ifdef FCFS
-      if (!nextp || p->pid < nextp->pid)
+      if (!nextp || p->pid < nextp->pid) // FCFS looks for lowest PID
         nextp = p;
     #endif
     #ifdef PRIO
-      if (!nextp || p->prio > nextp->prio)
+      if (!nextp || p->prio > nextp->prio) // PRIO looks for highest priority
         nextp = p;
     #endif
     #if defined(FCFS) || defined(PRIO)
     }
+    // if we find one, choose that and use it
+    // if not, release the lock and loop scheduler()
     if (!nextp) {
       release(&ptable.lock);
       continue; // no runnable process
@@ -486,4 +494,17 @@ procdump(void)
   }
 }
 
-
+void procstats(void) {
+    acquire(&ptable.lock);
+    struct proc* p;
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state == SLEEPING) {
+            p->time_s++;
+        } else if (p->state == RUNNABLE) {
+            p->time_w++;
+        } else if (p->state == RUNNING) {
+            p->time_r++;
+        }
+    }
+    release(&ptable.lock);
+}

@@ -67,6 +67,7 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   int prio;
+  int time_w, time_s, time_r;
 };
 
 // user view of process

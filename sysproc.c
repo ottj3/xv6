@@ -130,3 +130,23 @@ int sys_setprio(void) {
   proc->prio = n;
   return n;
 }
+
+int sys_getpstat(void) {
+    char* csleep;
+    char* cwait;
+    char* crun;
+
+    if (argptr(0, &csleep, sizeof(int)) < 0) return -1;
+    if (argptr(1, &cwait, sizeof(int)) < 0) return -1;
+    if (argptr(2, &crun, sizeof(int)) < 0) return -1;
+
+    int* sleep = (int*) csleep;
+    int* wait = (int*) cwait;
+    int* run = (int*) crun;
+
+    *sleep = proc->time_s;
+    *wait = proc->time_w;
+    *run = proc->time_r;
+
+    return 0;
+}
