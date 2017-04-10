@@ -265,9 +265,24 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+
+    #ifdef FCFS
+    struct proc* lowp = 0;
+    #endif
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
+
+    #ifdef FCFS
+      if (!lowp || p->pid < lowp->pid)
+        lowp = p;
+    }
+    if (!lowp) {
+      release(&ptable.lock);
+      continue; // no runnable process
+    }
+    p = lowp;
+    #endif
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
@@ -281,7 +296,9 @@ scheduler(void)
       // Process is done running for now.
       // It should have changed its p->state before coming back.
       proc = 0;
+    #ifndef FCFS
     }
+    #endif
     release(&ptable.lock);
 
   }
