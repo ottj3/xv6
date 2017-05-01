@@ -370,6 +370,7 @@ bmap(struct inode *ip, uint bn)
   if(bn < NINDIRECT){
     if((addr = ip->addrs[NDIRECT]) == 0) // allocate if necessary
       ip->addrs[NDIRECT] = addr = balloc(ip->dev);
+
     bp = bread(ip->dev, addr);
     a = (uint*)bp->data;
     // read address of data block from single indirect table
@@ -389,6 +390,7 @@ bmap(struct inode *ip, uint bn)
     uint sib = bn % NINDIRECT; // offset in single-indirect block
     if((addr = ip->addrs[NDIRECT+1]) == 0) // see if double-indirect block exists
       ip->addrs[NDIRECT+1] = addr = balloc(ip->dev); // allocate if necessary
+
     bp = bread(ip->dev, addr);
     a = (uint*)bp->data;
     // read address of single-indirect block
@@ -397,7 +399,47 @@ bmap(struct inode *ip, uint bn)
       log_write(bp);
     }
     brelse(bp);
-    
+
+    bp = bread(ip->dev, addr);
+    a = (uint*)bp->data;
+    // read address of data block within single-indirect block
+    if((addr = a[sib]) == 0){
+      a[sib] = addr = balloc(ip->dev); // allocate if necessary
+      log_write(bp);
+    }
+    brelse(bp);
+
+    return addr;
+  }
+  bn -= NINDIRECT * NINDIRECT;
+
+  // read triple-indirect
+  if (bn < NINDIRECT * NINDIRECT * NINDIRECT) {
+    uint tib = bn / (NINDIRECT * NINDIRECT);
+    uint dib = tib / NINDIRECT;
+    uint sib = bn % NINDIRECT;
+
+    if((addr = ip->addrs[NDIRECT+2]) == 0) // see if triple-indirect block exists
+      ip->addrs[NDIRECT+2] = addr = balloc(ip->dev); // allocate if necessary
+
+    bp = bread(ip->dev, addr);
+    a = (uint*)bp->data;
+    // read address of double-indirect block
+    if((addr = a[tib]) == 0){
+      a[tib] = addr = balloc(ip->dev); // allocate if necessary
+      log_write(bp);
+    }
+    brelse(bp);
+
+    bp = bread(ip->dev, addr);
+    a = (uint*)bp->data;
+    // read address of single-indirect block
+    if((addr = a[dib]) == 0){
+      a[dib] = addr = balloc(ip->dev); // allocate if necessary
+      log_write(bp);
+    }
+    brelse(bp);
+
     bp = bread(ip->dev, addr);
     a = (uint*)bp->data;
     // read address of data block within single-indirect block
