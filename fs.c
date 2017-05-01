@@ -366,17 +366,47 @@ bmap(struct inode *ip, uint bn)
   }
   bn -= NDIRECT;
 
+  // read single indirect block
   if(bn < NINDIRECT){
-    // Load indirect block, allocating if necessary.
-    if((addr = ip->addrs[NDIRECT]) == 0)
+    if((addr = ip->addrs[NDIRECT]) == 0) // allocate if necessary
       ip->addrs[NDIRECT] = addr = balloc(ip->dev);
     bp = bread(ip->dev, addr);
     a = (uint*)bp->data;
-    if((addr = a[bn]) == 0){
+    // read address of data block from single indirect table
+    if((addr = a[bn]) == 0){ // allocate if necessary
       a[bn] = addr = balloc(ip->dev);
       log_write(bp);
     }
     brelse(bp);
+
+    return addr;
+  }
+  bn -= NINDIRECT;
+
+  // read double indirect block
+  if (bn < NINDIRECT * NINDIRECT) {
+    uint dib = bn / NINDIRECT; // single-indirect block number
+    uint sib = bn % NINDIRECT; // offset in single-indirect block
+    if((addr = ip->addrs[NDIRECT+1]) == 0) // see if double-indirect block exists
+      ip->addrs[NDIRECT+1] = addr = balloc(ip->dev); // allocate if necessary
+    bp = bread(ip->dev, addr);
+    a = (uint*)bp->data;
+    // read address of single-indirect block
+    if((addr = a[dib]) == 0){
+      a[dib] = addr = balloc(ip->dev); // allocate if necessary
+      log_write(bp);
+    }
+    brelse(bp);
+    
+    bp = bread(ip->dev, addr);
+    a = (uint*)bp->data;
+    // read address of data block within single-indirect block
+    if((addr = a[sib]) == 0){
+      a[sib] = addr = balloc(ip->dev); // allocate if necessary
+      log_write(bp);
+    }
+    brelse(bp);
+
     return addr;
   }
 
